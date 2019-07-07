@@ -172,8 +172,7 @@ q.setup = function() {
     
     });
 
-    mobilenet.numClasses = 3;
-
+    mobilenet.numClasses = classes.length;
     classifier = mobilenet.classification(video, ()=> console.log('Video is ready!'));
 
     trainingProgress = q.select('#training-progress');
