@@ -1,3 +1,103 @@
+/*
+References for these codes:
+ https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-serial-input-to-the-p5-js-ide/
+ https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-serial-input-to-the-p5-js-ide/
+ */
+// let video;
+// let poseNet;
+// let noseX = 0;
+// let noseY = 0;
+
+// var serial;          // variable to hold an instance of the serialport library
+// var portName = '/dev/cu.wchusbserial1410';  // fill in your serial port name here
+// var inData;   // variable to hold the input data from Arduino
+// var outData = 0;  // variable to hold the output data to Arduino
+// var outData2 = 0;  // variable to hold the output data to Arduino
+// // var pos;
+// function setup() {
+
+//   //set up canvas
+//   createCanvas(1024, 900);
+//   video = createCapture(VIDEO);
+//   video.hide();
+//   poseNet = ml5.poseNet(video, modelReady);
+//   poseNet.on('pose', gotPoses);
+
+//   //set up communication port
+//   serial = new p5.SerialPort();       // make a new instance of the serialport library
+//   serial.on('list', printList);  // set a callback function for the serialport list event
+//   serial.on('connected', serverConnected); // callback for connecting to the server
+//   serial.on('open', portOpen);        // callback for the port opening
+//   serial.on('data', serialEvent);     // callback for when new data arrives
+//   serial.on('error', serialError);    // callback for errors
+//   serial.on('close', portClose);      // callback for the port closing
+//   serial.list();                      // list the serial ports
+//   serial.open(portName);              // open a serial port
+// }
+
+// function gotPoses(poses) {
+//   //console.log(poses);
+//   if (poses.length > 0) {
+//       let nX = poses[0].pose.keypoints[0].position.x; // 0 is for nose, check web for other trackable points https://github.com/tensorflow/tfjs-models/tree/master/posenet
+//     let nY = poses[0].pose.keypoints[0].position.y;
+//     noseX = lerp(noseX, nX, 0.5);
+//     noseY = lerp(noseY, nY, 0.5);
+//     pos = map(noseX,0,1024,0,255); 
+// 	pos2 = map(noseY,0,900,0,255); 
+// 	// mapping screen width 0 - 1024 to 0 - 255, value needed to control led brightness, this process can be either done here or in arduino
+//   }
+// }
+
+function modelReady() {
+}
+
+function draw() {
+  // set background to black
+
+  image(video, 0, 0);
+  fill(255, 0, 0);
+  ellipse(noseX, noseY, 50);
+
+  // set up serial output, to write the control value to the port
+  if(pos){
+	  pos = Math.floor(pos);
+	  pos2 = Math.floor(pos2);
+	  if(pos<0){
+		  pos= 0
+	  } else if (pos>255){
+	  	pos=255 
+	  }
+	  
+	  if(pos2<0){
+		  pos2= 0
+	  } else if (pos2>255){
+	  	pos2=255 
+	  }
+	  
+	  
+	
+	  outData = pos.toString();
+	  outData2 = pos2.toString();
+	  // outData = pos.toString()
+	  var string = outData + ',' + outData2 + '\0';
+	  // var string2 = outData2;
+	  //+ ",25,25,25/n"
+	  console.log("string: ", string);
+	  serial.write(string); 
+	  
+	 
+  }
+
+}
+
+/*
+References for these codes:
+ 
+ https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-serial-input-to-the-p5-js-ide/
+ Modified by DJCLDY & Raffi Tchaikarian 07/04/2019 
+
+ */
+
 
 var status 
 var draw = false 
@@ -35,13 +135,17 @@ var t = function( p ) {
         p.fill(255,0,0);
         p.push()
         p.scale(0.5)
-        // p.rotateX(k)
+        p.rotateX(k)
 
         var w = p.map(posX,0,480,0,p.windowWidth)
         var h = p.map(posY,0,640,0,p.windowHeight)
         var depth = p.map(posZ,20,100,-50,500)
-
+        // console.log(w,h,depth)
+        // // posZ = 6cm = realworld length of nose 
         pList.push([w,h,100,cols[0],cols[1],cols[2]])
+
+        console.log("point:", w, h,depth)
+        console.log()
 
         pList.forEach(pt=>{
 
@@ -98,12 +202,14 @@ var t = function( p ) {
 
   };
 };
+
 var myp5 = new p5(t, 'playField');
 
 // save this file as sketch.js
 // Sketch One
 
 var s = function(q){
+
 
   // MOBILE NET 
   let mobilenet;
@@ -125,19 +231,14 @@ var s = function(q){
   let classes = ['Angry','Happy','Goofy'];
   let classesCount = [0, 0, 0];
   var serial;          // variable to hold an instance of the serialport library
-  // what is this number? 
   var portName = '/dev/cu.wchusbserial1410';  // fill in your serial port name here
-
   var inData;   // variable to hold the input data from Arduino
   var outData = 0;  // variable to hold the output data to Arduino
   var outData2 = 0;  // variable to hold the output data to Arduino
   var pos;
 
+  q.setup = function() {
 
-    let metaBold;
-
-
-q.setup = function() {
     video = q.createCapture(q.VIDEO);
     video.parent('mainCanvas');
     video.size(640, 480);
@@ -145,12 +246,10 @@ q.setup = function() {
     video.hide();
     canvas = q.createCanvas(640, 480);
     canvas.parent('mainCanvas');
-    q.background(20);
 
-    metaBold = q.loadFont("arialbd.ttf");
-    q.textFont(metaBold, 44); 
+    q.background(20); // edit out 
+    q.noStroke();
 
-    // q.font = q.textFont(q.createFont("arial",32));
 
     poseNet = ml5.poseNet(video, modelReady);
     poseNet.on('pose', gotPoses);
@@ -173,6 +272,7 @@ q.setup = function() {
     });
 
     mobilenet.numClasses = classes.length;
+
     classifier = mobilenet.classification(video, ()=> console.log('Video is ready!'));
 
     trainingProgress = q.select('#training-progress');
@@ -208,16 +308,20 @@ q.setup = function() {
           // trainingProgress.attribute('style', 'width:'+progress+'%');
           console.log(loss);
         }
-      })
-    })
+      });
+    });
 
+    // setup tracker
+    // ctracker = new clm.tracker();
+    // ctracker.init(pModel);
+    // ctracker.start(videoInput.elt);
     // setup tracker
     ctracker = new clm.tracker();
     ctracker.init(pModel);
     ctracker.start(video.elt);
 
-
-    //     //set up communication port
+    
+    //set up communication port
     serial = new p5.SerialPort();       // make a new instance of the serialport library
     serial.on('list', printList);  // set a callback function for the serialport list event
     serial.on('connected', serverConnected); // callback for connecting to the server
@@ -229,15 +333,13 @@ q.setup = function() {
     serial.open(portName);              // open a serial port
 
 
-    q.noStroke();
   }
 
   q.drawFace = function(x,y,r,i){
-    // console.log('status:', status )
-  
 
-    switch (i)
-    {
+    console.log('status:', status )
+
+    switch (i){
         case 0:
             q.stroke(255,0,0)
             q.fill(255,0,0,25)
@@ -267,7 +369,7 @@ q.setup = function() {
     q.strokeWeight(1)
     q.textSize(14);
     q.push()
-        q.translate(x,y)
+    q.translate(x,y)
     q.scale(2)
     q.textAlign('CENTER')
     q.text(status,0,0);
@@ -288,7 +390,72 @@ q.setup = function() {
 
   }
 
-  // Serial Port Functions 
+  function modelReady() {
+    // body...
+    console.log("model is ready")
+
+  }
+
+  function gotPoses(poses) {
+    // console.log(poses);
+    if (poses.length > 0) {
+
+      // SAYJELS CODE 
+      let nX = poses[0].pose.keypoints[0].position.x
+      let nY = poses[0].pose.keypoints[0].position.y
+      let eX = poses[0].pose.keypoints[1].position.x
+      let eY = poses[0].pose.keypoints[1].position.y
+      noseX = q.lerp(noseX, nX, 0.5)
+      noseY = q.lerp(noseY, nY, 0.5)
+      eyelX = q.lerp(eyelX, eX, 0.5)
+      eyelY = q.lerp(eyelY, eY, 0.5)
+
+      /* RAFFIS CODE... CHECK 
+      let nX = poses[0].pose.keypoints[0].position.x; // 0 is for nose, check web for other trackable points https://github.com/tensorflow/tfjs-models/tree/master/posenet
+      let nY = poses[0].pose.keypoints[0].position.y;
+      noseX = lerp(noseX, nX, 0.5);
+      noseY = lerp(noseY, nY, 0.5);
+      pos = map(noseX,0,1024,0,255); 
+      pos2 = map(noseY,0,900,0,255); 
+      // mapping screen width 0 - 1024 to 0 - 255, value needed to control led brightness, this process can be either done here or in arduino
+      */ 
+ 
+
+    }
+
+  }
+
+  function gotResults(error, result) {
+
+    status = result 
+
+    if (error) {
+      console.log(error);
+      draw = false 
+    } else {
+      draw = true 
+
+      for (let i = 0; i < 3; i++) {
+// 
+        // console.log("got results")
+        predictions[i].html(classes[i]);
+        probabilities[i].html((result == classes[i] ? 100 : 0) + '%');
+        probabilities[i].attribute('aria-valuenow', (result == classes[i] ? 100 : 0));
+        // probabilities[i].attribute('style', 'width:' + floor(results[i].probability * 100)+ '%');
+        probabilities[i].attribute('style', 'width:' + (result == classes[i] ? 100 : 0) + '%');
+
+        if (result == classes[i]){
+          cols[i] = 255
+          state = i 
+        } else { 
+          cols[i] = 0
+        }
+
+      }
+      classifier.classify(gotResults);
+    }
+
+  }
 
   function printList(portList) {
 
@@ -332,84 +499,14 @@ q.setup = function() {
 
   }
 
-
-  function modelReady() {
-
-    // body...
-    console.log("model is ready")
-
-  }
-
-  function serialWrite(){
-
-    console.log('serial write!')
-
-
-  }
-
-
-  // Mobilenet Functions 
-
-  function gotPoses(poses) {
-    // console.log(poses);
-    if (poses.length > 0) {
-
-      let nX = poses[0].pose.keypoints[0].position.x;
-      let nY = poses[0].pose.keypoints[0].position.y;
-      let eX = poses[0].pose.keypoints[1].position.x;
-      let eY = poses[0].pose.keypoints[1].position.y;
-      noseX = q.lerp(noseX, nX, 0.5);
-      noseY = q.lerp(noseY, nY, 0.5);
-      eyelX = q.lerp(eyelX, eX, 0.5);
-      eyelY = q.lerp(eyelY, eY, 0.5);
-    
-    }
-  
-  }
-
-  gotResults = function(error, result) {
-
-    status = result 
-
-    if (error) {
-      console.log(error);
-      draw = false 
-    } else {
-      draw = true 
-
-      for (let i = 0; i < 3; i++) {
-// 
-        // console.log("got results")
-        predictions[i].html(classes[i]);
-        probabilities[i].html((result == classes[i] ? 100 : 0) + '%');
-        probabilities[i].attribute('aria-valuenow', (result == classes[i] ? 100 : 0));
-        probabilities[i].attribute('style', 'width:' + (result == classes[i] ? 100 : 0) + '%');
-
-        if (result == classes[i]){
-          cols[i] = 255
-          state = i 
-        } else { 
-          cols[i] = 0
-        }
-
-      }
-      classifier.classify(gotResults);
-    }
-
-    // outData = pos.toString();
-    // outData2 = pos2.toString();
-    // outData = pos.toString()
-    // var string = outData + ',' + outData2 + '\0';
-    // var string2 = outData2;
-    console.log("string: ", string);
-    // serial.write(string); 
-    
-
-  }
 }
 
 
 var myp5 = new p5(s, 'mainCanvas');
- 
+
 
     
+
+
+
+
