@@ -1,14 +1,4 @@
-var maxAngleX = 180 
-var minAngleX = 0
 
-var minAngleY = 0 
-var maxAngleY = 180 
-
-var rotX = 90 
-var rotY = 90 
-
-
-var serial;          // variable to hold an instance of the serialport library
 var status 
 var draw = false 
 var cols = [255,255,255]
@@ -67,10 +57,47 @@ var t = function( p ) {
 
         k += 0.01
 
-  }
-}
 
 
+
+
+        // p.push()
+        // // p.rotateX(k)
+        // // p.rotateZ(j)
+        // // p.scale(0.5)
+        // // p.scale(p.cos(j)*0.5)
+        // // p.scale(p.cos(k)*100)
+        // // p.stroke(255,50)
+        // // p.strokeWeight(1)
+        // // p.line(0,0,0,1000,1000,500)
+        // // p.line(0,0,0,1000,-1000,500)
+        // // p.line(0,0,0,-1000,1000,500)
+        // // p.line(0,0,0,-1000,-1000,500)
+       
+        // p.noStroke()
+        // pList.forEach(pt=>{
+        //   p.push()
+        //   p.translate(pt[0]-p.width/2,pt[1]-p.height/2,pt[2])
+        //   p.fill(pt[3],pt[4],pt[5],50)
+        //   p.sphere(25)
+        //   p.pop()
+        // })
+
+        // p.pop()
+
+        // k += 0.01
+        // j += 0.01   
+
+      // }
+
+      // p.push()
+      // p.translate(posX-p.width/2,posY-p.height/2,depth)
+      // p.fill(cols[0],cols[1],cols[2],150)
+      // p.sphere(5)
+      // p.pop()
+
+  };
+};
 var myp5 = new p5(t, 'playField');
 
 // save this file as sketch.js
@@ -97,6 +124,7 @@ var s = function(q){
   let ctracker;
   let classes = ['Angry','Happy','Goofy'];
   let classesCount = [0, 0, 0];
+  var serial;          // variable to hold an instance of the serialport library
   // what is this number? 
   var portName = '/dev/cu.wchusbserial1410';  // fill in your serial port name here
 
@@ -189,9 +217,9 @@ q.setup = function() {
     ctracker.start(video.elt);
 
 
-    // //     //set up communication port
+    //     //set up communication port
     serial = new p5.SerialPort();       // make a new instance of the serialport library
-    serial.on('list', console.logList);  // set a callback function for the serialport list event
+    serial.on('list', printList);  // set a callback function for the serialport list event
     serial.on('connected', serverConnected); // callback for connecting to the server
     serial.on('open', portOpen);        // callback for the port opening
     serial.on('data', serialEvent);     // callback for when new data arrives
@@ -268,7 +296,7 @@ q.setup = function() {
     for (var i = 0; i < portList.length; i++) {
 
       // Display the list the console:
-      console.log(i + " " + portList[i]);
+      print(i + " " + portList[i]);
  
     }
  
@@ -276,13 +304,13 @@ q.setup = function() {
 
   function serverConnected() {
 
-    console.log('connected to server.')
+    print('connected to server.')
 
   }
 
   function portOpen() {
 
-    console.log('the serial port opened.')
+    print('the serial port opened.')
 
   }
 
@@ -294,13 +322,13 @@ q.setup = function() {
 
   function serialError(err) {
 
-    console.log('Something went wrong with the serial port. ' + err);
+    print('Something went wrong with the serial port. ' + err);
 
   }
 
   function portClose() {
 
-    console.log('The serial port closed.')
+    print('The serial port closed.')
 
   }
 
@@ -342,8 +370,6 @@ q.setup = function() {
   gotResults = function(error, result) {
 
     status = result 
-	
-	// var mood = null
 
     if (error) {
       console.log(error);
@@ -360,9 +386,7 @@ q.setup = function() {
         probabilities[i].attribute('style', 'width:' + (result == classes[i] ? 100 : 0) + '%');
 
         if (result == classes[i]){
-			
           cols[i] = 255
-			
           state = i 
         } else { 
           cols[i] = 0
@@ -372,30 +396,13 @@ q.setup = function() {
       classifier.classify(gotResults);
     }
 
-    var pos = q.map(noseX,0,q.width,0,100); // hopefully width is the size of the DIV 
-    var pos2 = q.map(noseY,0,q.height,0,100); // 
-    var mood = result // 0,1,2
-    posX = Math.floor(pos);
-    posY = Math.floor(pos2);
-
-    var offX  =  50 - posX 
-    var offY = 50 - posY 
-    var incrX = 0 
-    var incrY = 0 
-
-    rotX += (offX > 0 ? 1 : -1);
-    rotY += (offX > 0 ? 1 : -1);
-    
-
-
-
-
-    outData = pos.toString();
-    outData2 = pos2.toString();
-
-	var string = cols[0] + ',' + cols[1] + ',' +cols[2] + ',' + posX + ',' + posY + '\0';
+    // outData = pos.toString();
+    // outData2 = pos2.toString();
+    // outData = pos.toString()
+    // var string = outData + ',' + outData2 + '\0';
+    // var string2 = outData2;
     console.log("string: ", string);
-    serial.write(string); 
+    // serial.write(string); 
     
 
   }
