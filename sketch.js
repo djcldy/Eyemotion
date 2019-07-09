@@ -1,4 +1,5 @@
 
+var serial;          // variable to hold an instance of the serialport library
 var status 
 var draw = false 
 var cols = [255,255,255]
@@ -124,7 +125,6 @@ var s = function(q){
   let ctracker;
   let classes = ['Angry','Happy','Goofy'];
   let classesCount = [0, 0, 0];
-  var serial;          // variable to hold an instance of the serialport library
   // what is this number? 
   var portName = '/dev/cu.wchusbserial1410';  // fill in your serial port name here
 
@@ -217,9 +217,9 @@ q.setup = function() {
     ctracker.start(video.elt);
 
 
-    //     //set up communication port
+    // //     //set up communication port
     serial = new p5.SerialPort();       // make a new instance of the serialport library
-    serial.on('list', printList);  // set a callback function for the serialport list event
+    serial.on('list', console.logList);  // set a callback function for the serialport list event
     serial.on('connected', serverConnected); // callback for connecting to the server
     serial.on('open', portOpen);        // callback for the port opening
     serial.on('data', serialEvent);     // callback for when new data arrives
@@ -296,7 +296,7 @@ q.setup = function() {
     for (var i = 0; i < portList.length; i++) {
 
       // Display the list the console:
-      print(i + " " + portList[i]);
+      console.log(i + " " + portList[i]);
  
     }
  
@@ -304,13 +304,13 @@ q.setup = function() {
 
   function serverConnected() {
 
-    print('connected to server.')
+    console.log('connected to server.')
 
   }
 
   function portOpen() {
 
-    print('the serial port opened.')
+    console.log('the serial port opened.')
 
   }
 
@@ -322,13 +322,13 @@ q.setup = function() {
 
   function serialError(err) {
 
-    print('Something went wrong with the serial port. ' + err);
+    console.log('Something went wrong with the serial port. ' + err);
 
   }
 
   function portClose() {
 
-    print('The serial port closed.')
+    console.log('The serial port closed.')
 
   }
 
@@ -370,6 +370,8 @@ q.setup = function() {
   gotResults = function(error, result) {
 
     status = result 
+	
+	// var mood = null
 
     if (error) {
       console.log(error);
@@ -386,7 +388,9 @@ q.setup = function() {
         probabilities[i].attribute('style', 'width:' + (result == classes[i] ? 100 : 0) + '%');
 
         if (result == classes[i]){
+			
           cols[i] = 255
+			
           state = i 
         } else { 
           cols[i] = 0
@@ -396,13 +400,20 @@ q.setup = function() {
       classifier.classify(gotResults);
     }
 
-    // outData = pos.toString();
-    // outData2 = pos2.toString();
-    // outData = pos.toString()
-    // var string = outData + ',' + outData2 + '\0';
-    // var string2 = outData2;
+    var pos = q.map(noseX,0,q.width,0,255);
+    var pos2 = q.map(noseY,0,q.height,0,255); 
+    var mood = result // 0,1,2
+	posX = Math.floor(pos);
+	posY = Math.floor(pos2);
+	
+
+
+    outData = pos.toString();
+    outData2 = pos2.toString();
+
+	var string = cols[0] + ',' + cols[1] + ',' +cols[2] + ',' + posX + ',' + posY + '\0';
     console.log("string: ", string);
-    // serial.write(string); 
+    serial.write(string); 
     
 
   }
