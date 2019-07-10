@@ -1,3 +1,14 @@
+var maxAngleX = 30
+var minAngleX = 70
+//min30-max70
+
+var minAngleY = 0
+var maxAngleY = 180
+//min90 
+
+var rotX = 30 
+var rotY = 0 
+
 
 var serial;          // variable to hold an instance of the serialport library
 var status 
@@ -58,47 +69,10 @@ var t = function( p ) {
 
         k += 0.01
 
+  }
+}
 
 
-
-
-        // p.push()
-        // // p.rotateX(k)
-        // // p.rotateZ(j)
-        // // p.scale(0.5)
-        // // p.scale(p.cos(j)*0.5)
-        // // p.scale(p.cos(k)*100)
-        // // p.stroke(255,50)
-        // // p.strokeWeight(1)
-        // // p.line(0,0,0,1000,1000,500)
-        // // p.line(0,0,0,1000,-1000,500)
-        // // p.line(0,0,0,-1000,1000,500)
-        // // p.line(0,0,0,-1000,-1000,500)
-       
-        // p.noStroke()
-        // pList.forEach(pt=>{
-        //   p.push()
-        //   p.translate(pt[0]-p.width/2,pt[1]-p.height/2,pt[2])
-        //   p.fill(pt[3],pt[4],pt[5],50)
-        //   p.sphere(25)
-        //   p.pop()
-        // })
-
-        // p.pop()
-
-        // k += 0.01
-        // j += 0.01   
-
-      // }
-
-      // p.push()
-      // p.translate(posX-p.width/2,posY-p.height/2,depth)
-      // p.fill(cols[0],cols[1],cols[2],150)
-      // p.sphere(5)
-      // p.pop()
-
-  };
-};
 var myp5 = new p5(t, 'playField');
 
 // save this file as sketch.js
@@ -227,8 +201,12 @@ q.setup = function() {
     serial.on('close', portClose);      // callback for the port closing
     serial.list();                      // list the serial ports
     serial.open(portName);              // open a serial port
+	
 
-
+	var string = cols[0] + ',' + cols[1] + ',' +cols[2] + ',' + rotX + ',' + rotY + '\0';
+    console.log("string: ", string);
+    serial.write(string); 
+	
     q.noStroke();
   }
 
@@ -366,7 +344,8 @@ q.setup = function() {
     }
   
   }
-
+ 
+  
   gotResults = function(error, result) {
 
     status = result 
@@ -400,18 +379,28 @@ q.setup = function() {
       classifier.classify(gotResults);
     }
 
-    var pos = q.map(noseX,0,q.width,0,255);
-    var pos2 = q.map(noseY,0,q.height,0,255); 
+    var pos = q.map(noseX,0,q.width,0,100); // hopefully width is the size of the DIV 
+    var pos2 = q.map(noseY,0,q.height,0,100); // 
     var mood = result // 0,1,2
-	posX = Math.floor(pos);
-	posY = Math.floor(pos2);
-	
+    posX = Math.floor(pos);
+    posY = Math.floor(pos2);
+
+    var offX  =  50 - posX 
+    var offY = 50 - posY 
+    var incrX = 0 
+    var incrY = 0 
+
+    rotX += (offX > 0 ? 1 : -1);
+    rotY += (offY > 0 ? -1 : 1);
+    
+
+
 
 
     outData = pos.toString();
     outData2 = pos2.toString();
 
-	var string = cols[0] + ',' + cols[1] + ',' +cols[2] + ',' + posX + ',' + posY + '\0';
+	var string = cols[0] + ',' + cols[1] + ',' +cols[2] + ',' + rotX + ',' + rotY + '\0';
     console.log("string: ", string);
     serial.write(string); 
     
@@ -421,6 +410,3 @@ q.setup = function() {
 
 
 var myp5 = new p5(s, 'mainCanvas');
- 
-
-    
