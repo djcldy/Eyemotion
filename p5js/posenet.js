@@ -1,16 +1,104 @@
-var maxAngleX = 30
-var minAngleX = 70
-//min30-max70
+/*
+References for these codes:
+ https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-serial-input-to-the-p5-js-ide/
+ https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-serial-input-to-the-p5-js-ide/
+ */
+// let video;
+// let poseNet;
+// let noseX = 0;
+// let noseY = 0;
 
-var minAngleY = 0
-var maxAngleY = 180
-//min90 
+// var serial;          // variable to hold an instance of the serialport library
+// var portName = '/dev/cu.wchusbserial1410';  // fill in your serial port name here
+// var inData;   // variable to hold the input data from Arduino
+// var outData = 0;  // variable to hold the output data to Arduino
+// var outData2 = 0;  // variable to hold the output data to Arduino
+// // var pos;
+// function setup() {
 
-var rotX = 30 
-var rotY = 0 
+//   //set up canvas
+//   createCanvas(1024, 900);
+//   video = createCapture(VIDEO);
+//   video.hide();
+//   poseNet = ml5.poseNet(video, modelReady);
+//   poseNet.on('pose', gotPoses);
+
+//   //set up communication port
+//   serial = new p5.SerialPort();       // make a new instance of the serialport library
+//   serial.on('list', printList);  // set a callback function for the serialport list event
+//   serial.on('connected', serverConnected); // callback for connecting to the server
+//   serial.on('open', portOpen);        // callback for the port opening
+//   serial.on('data', serialEvent);     // callback for when new data arrives
+//   serial.on('error', serialError);    // callback for errors
+//   serial.on('close', portClose);      // callback for the port closing
+//   serial.list();                      // list the serial ports
+//   serial.open(portName);              // open a serial port
+// }
+
+// function gotPoses(poses) {
+//   //console.log(poses);
+//   if (poses.length > 0) {
+//       let nX = poses[0].pose.keypoints[0].position.x; // 0 is for nose, check web for other trackable points https://github.com/tensorflow/tfjs-models/tree/master/posenet
+//     let nY = poses[0].pose.keypoints[0].position.y;
+//     noseX = lerp(noseX, nX, 0.5);
+//     noseY = lerp(noseY, nY, 0.5);
+//     pos = map(noseX,0,1024,0,255); 
+// 	pos2 = map(noseY,0,900,0,255); 
+// 	// mapping screen width 0 - 1024 to 0 - 255, value needed to control led brightness, this process can be either done here or in arduino
+//   }
+// }
+
+function modelReady() {
+}
+
+function draw() {
+  // set background to black
+
+  image(video, 0, 0);
+  fill(255, 0, 0);
+  ellipse(noseX, noseY, 50);
+
+  // set up serial output, to write the control value to the port
+  if(pos){
+	  pos = Math.floor(pos);
+	  pos2 = Math.floor(pos2);
+	  if(pos<0){
+		  pos= 0
+	  } else if (pos>255){
+	  	pos=255 
+	  }
+	  
+	  if(pos2<0){
+		  pos2= 0
+	  } else if (pos2>255){
+	  	pos2=255 
+	  }
+	  
+	  
+	
+	  outData = pos.toString();
+	  outData2 = pos2.toString();
+	  // outData = pos.toString()
+	  var string = outData + ',' + outData2 + '\0';
+	  // var string2 = outData2;
+	  //+ ",25,25,25/n"
+	  console.log("string: ", string);
+	  serial.write(string); 
+	  
+	 
+  }
+
+}
+
+/*
+References for these codes:
+ 
+ https://itp.nyu.edu/physcomp/labs/labs-serial-communication/lab-serial-input-to-the-p5-js-ide/
+ Modified by DJCLDY & Raffi Tchaikarian 07/04/2019 
+
+ */
 
 
-var serial;          // variable to hold an instance of the serialport library
 var status 
 var draw = false 
 var cols = [255,255,255]
@@ -47,13 +135,17 @@ var t = function( p ) {
         p.fill(255,0,0);
         p.push()
         p.scale(0.5)
-        // p.rotateX(k)
+        p.rotateX(k)
 
         var w = p.map(posX,0,480,0,p.windowWidth)
         var h = p.map(posY,0,640,0,p.windowHeight)
         var depth = p.map(posZ,20,100,-50,500)
-
+        // console.log(w,h,depth)
+        // // posZ = 6cm = realworld length of nose 
         pList.push([w,h,100,cols[0],cols[1],cols[2]])
+
+        console.log("point:", w, h,depth)
+        console.log()
 
         pList.forEach(pt=>{
 
@@ -69,9 +161,47 @@ var t = function( p ) {
 
         k += 0.01
 
-  }
-}
 
+
+
+
+        // p.push()
+        // // p.rotateX(k)
+        // // p.rotateZ(j)
+        // // p.scale(0.5)
+        // // p.scale(p.cos(j)*0.5)
+        // // p.scale(p.cos(k)*100)
+        // // p.stroke(255,50)
+        // // p.strokeWeight(1)
+        // // p.line(0,0,0,1000,1000,500)
+        // // p.line(0,0,0,1000,-1000,500)
+        // // p.line(0,0,0,-1000,1000,500)
+        // // p.line(0,0,0,-1000,-1000,500)
+       
+        // p.noStroke()
+        // pList.forEach(pt=>{
+        //   p.push()
+        //   p.translate(pt[0]-p.width/2,pt[1]-p.height/2,pt[2])
+        //   p.fill(pt[3],pt[4],pt[5],50)
+        //   p.sphere(25)
+        //   p.pop()
+        // })
+
+        // p.pop()
+
+        // k += 0.01
+        // j += 0.01   
+
+      // }
+
+      // p.push()
+      // p.translate(posX-p.width/2,posY-p.height/2,depth)
+      // p.fill(cols[0],cols[1],cols[2],150)
+      // p.sphere(5)
+      // p.pop()
+
+  };
+};
 
 var myp5 = new p5(t, 'playField');
 
@@ -79,6 +209,7 @@ var myp5 = new p5(t, 'playField');
 // Sketch One
 
 var s = function(q){
+
 
   // MOBILE NET 
   let mobilenet;
@@ -99,19 +230,15 @@ var s = function(q){
   let ctracker;
   let classes = ['Angry','Happy','Goofy'];
   let classesCount = [0, 0, 0];
-  // what is this number? 
+  var serial;          // variable to hold an instance of the serialport library
   var portName = '/dev/cu.wchusbserial1410';  // fill in your serial port name here
-
   var inData;   // variable to hold the input data from Arduino
   var outData = 0;  // variable to hold the output data to Arduino
   var outData2 = 0;  // variable to hold the output data to Arduino
   var pos;
 
+  q.setup = function() {
 
-    let metaBold;
-
-
-q.setup = function() {
     video = q.createCapture(q.VIDEO);
     video.parent('mainCanvas');
     video.size(640, 480);
@@ -119,12 +246,10 @@ q.setup = function() {
     video.hide();
     canvas = q.createCanvas(640, 480);
     canvas.parent('mainCanvas');
-    q.background(20);
 
-    metaBold = q.loadFont("arialbd.ttf");
-    q.textFont(metaBold, 44); 
+    q.background(20); // edit out 
+    q.noStroke();
 
-    // q.font = q.textFont(q.createFont("arial",32));
 
     poseNet = ml5.poseNet(video, modelReady);
     poseNet.on('pose', gotPoses);
@@ -147,6 +272,7 @@ q.setup = function() {
     });
 
     mobilenet.numClasses = classes.length;
+
     classifier = mobilenet.classification(video, ()=> console.log('Video is ready!'));
 
     trainingProgress = q.select('#training-progress');
@@ -182,18 +308,22 @@ q.setup = function() {
           // trainingProgress.attribute('style', 'width:'+progress+'%');
           console.log(loss);
         }
-      })
-    })
+      });
+    });
 
+    // setup tracker
+    // ctracker = new clm.tracker();
+    // ctracker.init(pModel);
+    // ctracker.start(videoInput.elt);
     // setup tracker
     ctracker = new clm.tracker();
     ctracker.init(pModel);
     ctracker.start(video.elt);
 
-
-    // //     //set up communication port
+    
+    //set up communication port
     serial = new p5.SerialPort();       // make a new instance of the serialport library
-    serial.on('list', console.logList);  // set a callback function for the serialport list event
+    serial.on('list', printList);  // set a callback function for the serialport list event
     serial.on('connected', serverConnected); // callback for connecting to the server
     serial.on('open', portOpen);        // callback for the port opening
     serial.on('data', serialEvent);     // callback for when new data arrives
@@ -201,21 +331,15 @@ q.setup = function() {
     serial.on('close', portClose);      // callback for the port closing
     serial.list();                      // list the serial ports
     serial.open(portName);              // open a serial port
-	
 
-	var string = cols[0] + ',' + cols[1] + ',' +cols[2] + ',' + rotX + ',' + rotY + '\0';
-    console.log("string: ", string);
-    serial.write(string); 
-	
-    q.noStroke();
+
   }
 
   q.drawFace = function(x,y,r,i){
-    // console.log('status:', status )
-  
 
-    switch (i)
-    {
+    console.log('status:', status )
+
+    switch (i){
         case 0:
             q.stroke(255,0,0)
             q.fill(255,0,0,25)
@@ -245,7 +369,7 @@ q.setup = function() {
     q.strokeWeight(1)
     q.textSize(14);
     q.push()
-        q.translate(x,y)
+    q.translate(x,y)
     q.scale(2)
     q.textAlign('CENTER')
     q.text(status,0,0);
@@ -266,91 +390,44 @@ q.setup = function() {
 
   }
 
-  // Serial Port Functions 
-
-  function printList(portList) {
-
-  // portList is an array of serial port names
-    for (var i = 0; i < portList.length; i++) {
-
-      // Display the list the console:
-      console.log(i + " " + portList[i]);
- 
-    }
- 
-  }
-
-  function serverConnected() {
-
-    console.log('connected to server.')
-
-  }
-
-  function portOpen() {
-
-    console.log('the serial port opened.')
-
-  }
-
-  function serialEvent() {
-
-    inData = Number(serial.read())
-
-  }
-
-  function serialError(err) {
-
-    console.log('Something went wrong with the serial port. ' + err);
-
-  }
-
-  function portClose() {
-
-    console.log('The serial port closed.')
-
-  }
-
-
   function modelReady() {
-
     // body...
     console.log("model is ready")
 
   }
 
-  function serialWrite(){
-
-    console.log('serial write!')
-
-
-  }
-
-
-  // Mobilenet Functions 
-
   function gotPoses(poses) {
     // console.log(poses);
     if (poses.length > 0) {
 
-      let nX = poses[0].pose.keypoints[0].position.x;
+      // SAYJELS CODE 
+      let nX = poses[0].pose.keypoints[0].position.x
+      let nY = poses[0].pose.keypoints[0].position.y
+      let eX = poses[0].pose.keypoints[1].position.x
+      let eY = poses[0].pose.keypoints[1].position.y
+      noseX = q.lerp(noseX, nX, 0.5)
+      noseY = q.lerp(noseY, nY, 0.5)
+      eyelX = q.lerp(eyelX, eX, 0.5)
+      eyelY = q.lerp(eyelY, eY, 0.5)
+
+      /* RAFFIS CODE... CHECK 
+      let nX = poses[0].pose.keypoints[0].position.x; // 0 is for nose, check web for other trackable points https://github.com/tensorflow/tfjs-models/tree/master/posenet
       let nY = poses[0].pose.keypoints[0].position.y;
-      let eX = poses[0].pose.keypoints[1].position.x;
-      let eY = poses[0].pose.keypoints[1].position.y;
-      noseX = q.lerp(noseX, nX, 0.5);
-      noseY = q.lerp(noseY, nY, 0.5);
-      eyelX = q.lerp(eyelX, eX, 0.5);
-      eyelY = q.lerp(eyelY, eY, 0.5);
-    
-    }
-  
-  }
+      noseX = lerp(noseX, nX, 0.5);
+      noseY = lerp(noseY, nY, 0.5);
+      pos = map(noseX,0,1024,0,255); 
+      pos2 = map(noseY,0,900,0,255); 
+      // mapping screen width 0 - 1024 to 0 - 255, value needed to control led brightness, this process can be either done here or in arduino
+      */ 
  
-  
-  gotResults = function(error, result) {
+
+    }
+
+  }
+
+  function gotResults(error, result) {
 
     status = result 
-	
-	// var mood = null
 
     if (error) {
       console.log(error);
@@ -364,12 +441,11 @@ q.setup = function() {
         predictions[i].html(classes[i]);
         probabilities[i].html((result == classes[i] ? 100 : 0) + '%');
         probabilities[i].attribute('aria-valuenow', (result == classes[i] ? 100 : 0));
+        // probabilities[i].attribute('style', 'width:' + floor(results[i].probability * 100)+ '%');
         probabilities[i].attribute('style', 'width:' + (result == classes[i] ? 100 : 0) + '%');
 
         if (result == classes[i]){
-			
           cols[i] = 255
-			
           state = i 
         } else { 
           cols[i] = 0
@@ -379,34 +455,58 @@ q.setup = function() {
       classifier.classify(gotResults);
     }
 
-    var pos = q.map(noseX,0,q.width,0,100); // hopefully width is the size of the DIV 
-    var pos2 = q.map(noseY,0,q.height,0,100); // 
-    var mood = result // 0,1,2
-    posX = Math.floor(pos);
-    posY = Math.floor(pos2);
+  }
 
-    var offX  =  50 - posX 
-    var offY = 50 - posY 
-    var incrX = 0 
-    var incrY = 0 
+  function printList(portList) {
 
-    rotX += (offX > 0 ? 1 : -1);
-    rotY += (offY > 0 ? -1 : 1);
-    
+  // portList is an array of serial port names
+    for (var i = 0; i < portList.length; i++) {
 
+      // Display the list the console:
+      print(i + " " + portList[i]);
+ 
+    }
+ 
+  }
 
+  function serverConnected() {
 
-
-    outData = pos.toString();
-    outData2 = pos2.toString();
-
-	var string = cols[0] + ',' + cols[1] + ',' +cols[2] + ',' + rotX + ',' + rotY + '\0';
-    console.log("string: ", string);
-    serial.write(string); 
-    
+    print('connected to server.')
 
   }
+
+  function portOpen() {
+
+    print('the serial port opened.')
+
+  }
+
+  function serialEvent() {
+
+    inData = Number(serial.read())
+
+  }
+
+  function serialError(err) {
+
+    print('Something went wrong with the serial port. ' + err);
+
+  }
+
+  function portClose() {
+
+    print('The serial port closed.')
+
+  }
+
 }
 
 
 var myp5 = new p5(s, 'mainCanvas');
+
+
+    
+
+
+
+
