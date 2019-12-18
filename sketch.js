@@ -1,4 +1,21 @@
+let maxAngleX = 175;
+let maxAngleY = 120;
+let minAngleX = 30;
+let minAngleY = 30;
+var posY = 90;
+var posX = 90;
+var rotX = 0;
+var rotY = 0;
+var midBuffer = 10;
+var midHeight
+var midWidth
 
+let cut;
+let ctracker;
+
+
+
+var serial;          // variable to hold an instance of the serialport library
 var status 
 var draw = false 
 var cols = [255,255,255]
@@ -9,8 +26,13 @@ var k,j
 var state = null
 
 var pList = []
+var faces = []
+
+var faceDected = false 
+
 // Sketch Two
-var t = function( p ) { 
+var t = function( p ) {
+
   k = 0
   j =0
 
@@ -57,47 +79,10 @@ var t = function( p ) {
 
         k += 0.01
 
+  }
+}
 
 
-
-
-        // p.push()
-        // // p.rotateX(k)
-        // // p.rotateZ(j)
-        // // p.scale(0.5)
-        // // p.scale(p.cos(j)*0.5)
-        // // p.scale(p.cos(k)*100)
-        // // p.stroke(255,50)
-        // // p.strokeWeight(1)
-        // // p.line(0,0,0,1000,1000,500)
-        // // p.line(0,0,0,1000,-1000,500)
-        // // p.line(0,0,0,-1000,1000,500)
-        // // p.line(0,0,0,-1000,-1000,500)
-       
-        // p.noStroke()
-        // pList.forEach(pt=>{
-        //   p.push()
-        //   p.translate(pt[0]-p.width/2,pt[1]-p.height/2,pt[2])
-        //   p.fill(pt[3],pt[4],pt[5],50)
-        //   p.sphere(25)
-        //   p.pop()
-        // })
-
-        // p.pop()
-
-        // k += 0.01
-        // j += 0.01   
-
-      // }
-
-      // p.push()
-      // p.translate(posX-p.width/2,posY-p.height/2,depth)
-      // p.fill(cols[0],cols[1],cols[2],150)
-      // p.sphere(5)
-      // p.pop()
-
-  };
-};
 var myp5 = new p5(t, 'playField');
 
 // save this file as sketch.js
@@ -124,7 +109,6 @@ var s = function(q){
   let ctracker;
   let classes = ['Angry','Happy','Goofy'];
   let classesCount = [0, 0, 0];
-  var serial;          // variable to hold an instance of the serialport library
   // what is this number? 
   var portName = '/dev/cu.wchusbserial1410';  // fill in your serial port name here
 
@@ -132,12 +116,11 @@ var s = function(q){
   var outData = 0;  // variable to hold the output data to Arduino
   var outData2 = 0;  // variable to hold the output data to Arduino
   var pos;
-
-
-    let metaBold;
+  let metaBold;
 
 
 q.setup = function() {
+
     video = q.createCapture(q.VIDEO);
     video.parent('mainCanvas');
     video.size(640, 480);
@@ -147,10 +130,17 @@ q.setup = function() {
     canvas.parent('mainCanvas');
     q.background(20);
 
+    var midHeight = (q.height/2);
+    var midWidth = (q.width/2);
+
     metaBold = q.loadFont("arialbd.ttf");
     q.textFont(metaBold, 44); 
 
-    // q.font = q.textFont(q.createFont("arial",32));
+    let options = {
+        // imageScaleFactor: 1,
+        minConfidence: 0.9
+    }
+    
 
     poseNet = ml5.poseNet(video, modelReady);
     poseNet.on('pose', gotPoses);
@@ -187,9 +177,11 @@ q.setup = function() {
         // console.log(cut);
         classifier.addImage(classes[i], () =>{ 
           // console.log('Added!');
-        });
-        classButtons[i].html(classes[i] + ' (' + (++classesCount[i]) + ')');
-      });
+        })
+        
+        classButtons[i].html(classes[i] + ' (' + (++classesCount[i]) + ')')
+
+      })
 
     }
 
@@ -211,15 +203,9 @@ q.setup = function() {
       })
     })
 
-    // setup tracker
-    ctracker = new clm.tracker();
-    ctracker.init(pModel);
-    ctracker.start(video.elt);
-
-
-    //     //set up communication port
+    // //     //set up communication port
     serial = new p5.SerialPort();       // make a new instance of the serialport library
-    serial.on('list', printList);  // set a callback function for the serialport list event
+    serial.on('list', console.logList);  // set a callback function for the serialport list event
     serial.on('connected', serverConnected); // callback for connecting to the server
     serial.on('open', portOpen);        // callback for the port opening
     serial.on('data', serialEvent);     // callback for when new data arrives
@@ -227,16 +213,12 @@ q.setup = function() {
     serial.on('close', portClose);      // callback for the port closing
     serial.list();                      // list the serial ports
     serial.open(portName);              // open a serial port
-
-
-    q.noStroke();
   }
 
   q.drawFace = function(x,y,r,i){
     // console.log('status:', status )
   
-
-    switch (i)
+    switch (i) 
     {
         case 0:
             q.stroke(255,0,0)
@@ -259,32 +241,67 @@ q.setup = function() {
             break;
           }
 
-    // q.noFill()
-    // q.stroke(255)
-    q.strokeWeight(3)
-    q.ellipse(x,y,r*3,r*4)
-    // q.noStroke()
-    q.strokeWeight(1)
-    q.textSize(14);
-    q.push()
-        q.translate(x,y)
-    q.scale(2)
-    q.textAlign('CENTER')
-    q.text(status,0,0);
-    q.pop()
-
   }
 
   q.draw = function() {
+    // console.log('hi!')
 
     q.clear();
     q.image(video, 0, 0);
-    let d = q.dist(noseX, noseY, eyelX, eyelY);
-    q.fill(cols[0], cols[1], cols[2]);
-    q.drawFace(noseX,noseY,d*2,state)
-    positions = ctracker.getCurrentPosition(); //  can we refactor this ?? 
-    posX = noseX // lets define as global variables 
-    posY = noseY 
+
+//     positions = ctracker.getCurrentPosition();
+//     // console.log(JSON.stringify(positions,null,4))
+    
+    if (faces.length >0){
+      var face = faces[0]
+      // q.drawFace(face.noseX,face.noseY,face.distance,null)
+      var d = face.distance 
+
+      var xmax = face.noseX + d*1.5 
+      var ymax = face.noseY + d*2 
+      var xmin = face.noseX - d*1.5
+      var ymin = face.noseY - d*2  
+
+      if (xmax > q.width){
+        xmax = q.width 
+      }
+
+      if (ymax > q.height){
+        ymax = q.height
+      }
+
+      if (ymin < 0){
+        ymin = 0
+      }
+
+      if (xmin < 0){
+        xmin = 0 
+      }
+
+      var cw = xmax - xmin
+      var ch = ymax - ymin 
+
+      if (cw > 0 && ch > 0){
+
+        cut = q.get(xmin, ymin, cw, ch);
+        cut.loadPixels()
+        cut.updatePixels()
+        q.noFill()
+        q.strokeWeight(3)
+        q.stroke(cols[0],cols[1],cols[2])
+        q.rect(xmin, ymin, cw, ch)
+        q.background(0, 0, 0, 150)
+        q.image(cut, xmin, ymin)
+
+      } 
+
+    } else {
+
+      q.background(0, 0, 0, 200)
+    
+    }
+     
+
 
   }
 
@@ -296,7 +313,7 @@ q.setup = function() {
     for (var i = 0; i < portList.length; i++) {
 
       // Display the list the console:
-      print(i + " " + portList[i]);
+      console.log(i + " " + portList[i]);
  
     }
  
@@ -348,28 +365,77 @@ q.setup = function() {
   }
 
 
-  // Mobilenet Functions 
+  // Pose Net  
 
   function gotPoses(poses) {
-    // console.log(poses);
+    // console.log('num faces', poses.length);
+    faces = []
+    
     if (poses.length > 0) {
 
-      let nX = poses[0].pose.keypoints[0].position.x;
-      let nY = poses[0].pose.keypoints[0].position.y;
-      let eX = poses[0].pose.keypoints[1].position.x;
-      let eY = poses[0].pose.keypoints[1].position.y;
-      noseX = q.lerp(noseX, nX, 0.5);
-      noseY = q.lerp(noseY, nY, 0.5);
-      eyelX = q.lerp(eyelX, eX, 0.5);
-      eyelY = q.lerp(eyelY, eY, 0.5);
+      // console.log(poses[0])
+        
+      // console.log(JSON.stringify(poses[0],null,4))      
+      for (var i =0; i < poses.length; i++){
+
+        // if (poses[i].pose.keypoints[0].score > 0.99){
+
+        // }
+        var score = poses[i].pose.keypoints[0].score
+        // console.log('score:',score)
+        // console.log("no score", JSON.stringify(poses[i].pose.keypoints[0].score))
+        if (score > 0.99){
+
+          let nX = poses[i].pose.keypoints[0].position.x;
+          let nY = poses[i].pose.keypoints[0].position.y;
+          let eX = poses[i].pose.keypoints[1].position.x;
+          let eY = poses[i].pose.keypoints[1].position.y;
+
+          var obj = {}
+          obj.noseX = nX 
+          obj.noseY = nY
+          obj.eyelX = eX
+          obj.eyelY = eY
+          obj.distance = q.dist(nX,nY,eX,eY)
+
+          faces.push(obj)  
+
+        }
+
+      }
+
+      console.log("faces:", faces.length)
+      if (faces.length>1){
+
+      faces.sort(function(a,b){
+        return b.dist - a.dist   
+      })
+      console.log("multiple faces")
+        for(var i =0; i < faces.length; i++){
+          console.log("i: ", faces[i].distance) 
+        }
+      }
+      // faces.push(obj)
+      faceDected = true 
     
+    } else { 
+
+      faceDected = false 
+      faces = []
+
     }
+
+    // console.log('number of faces: ', faces.length)
   
   }
 
-  gotResults = function(error, result) {
+  // MobileNet Function 
+
+  function gotResults(error, result) {
 
     status = result 
+  
+  // var mood = null
 
     if (error) {
       console.log(error);
@@ -386,7 +452,9 @@ q.setup = function() {
         probabilities[i].attribute('style', 'width:' + (result == classes[i] ? 100 : 0) + '%');
 
         if (result == classes[i]){
+      
           cols[i] = 255
+      
           state = i 
         } else { 
           cols[i] = 0
@@ -396,20 +464,39 @@ q.setup = function() {
       classifier.classify(gotResults);
     }
 
-    // outData = pos.toString();
-    // outData2 = pos2.toString();
-    // outData = pos.toString()
-    // var string = outData + ',' + outData2 + '\0';
-    // var string2 = outData2;
+    var servoX = q.map(noseX, 0, q.width, 180, 0); 
+    var servoY = q.map(noseY, 0, q.height, 180, 0); 
+    var throttlingPerc = 0.2;
+
+    // 
+
+    if (noseX < (midWidth - midBuffer) || noseX > (midWidth + midBuffer)) {
+      posX += (servoX - posX) * throttlingPerc;
+
+    }
+
+    if (noseY < (midHeight - midBuffer) || noseY > (midHeight + midBuffer)) {
+      posY += (servoY - posY) * throttlingPerc;
+      
+    }
+
+    posX = constrain(posX, minAngleX, maxAngleX);
+    posY = constrain(posY, minAngleY, maxAngleY);
+    posX = Math.floor(posX);
+    posY = Math.floor(posY);
+    rotX = posX.toString();
+    rotY = posY.toString();
+
+    var string = cols[0] + ',' + cols[1] + ',' +cols[2] + ',' + rotX + ',' + rotY + '\0';
     console.log("string: ", string);
-    // serial.write(string); 
     
+    serial.write(string); 
+
+    //
+        
 
   }
 }
 
 
 var myp5 = new p5(s, 'mainCanvas');
- 
-
-    
